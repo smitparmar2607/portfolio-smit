@@ -27,6 +27,7 @@ steps:
       - "--zone=northamerica-northeast2"
       - "--num-nodes=1"
       - "--machine-type=e2-medium"
+      - "--disk-type=pd-standard"
       - "--project=portfolio-site-472419"
     id: Create GKE Cluster
   - name: gcr.io/cloud-builders/gcloud
