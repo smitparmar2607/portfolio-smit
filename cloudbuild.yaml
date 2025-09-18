@@ -8,8 +8,8 @@ steps:
         "northamerica-northeast2-docker.pkg.dev/portfolio-site-472419/portfolio-repo-smit/portfolio-smit-image:latest",
         ".",
       ]
-
     id: Build Container Image
+
   # Docker Push
   - name: "gcr.io/cloud-builders/docker"
     args:
@@ -18,18 +18,27 @@ steps:
         "northamerica-northeast2-docker.pkg.dev/portfolio-site-472419/portfolio-repo-smit/portfolio-smit-image:latest",
       ]
     id: Push Container Image to Artifact Repo
+
+  # Create GKE Cluster (only if not exists)
   - name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
     args:
-      - container
-      - clusters
-      - create
-      - portfolio-cluster-smit
-      - "--zone=northamerica-northeast2"
-      - "--num-nodes=1"
-      - "--machine-type=e2-medium"
-      - "--disk-type=pd-standard"
-      - "--project=portfolio-site-472419"
-    id: Create GKE Cluster
+      - -c
+      - |
+        if ! gcloud container clusters describe portfolio-cluster-smit --zone=northamerica-northeast2 --project=portfolio-site-472419 >/dev/null 2>&1; then
+          echo "Cluster not found. Creating..."
+          gcloud container clusters create portfolio-cluster-smit \
+            --zone=northamerica-northeast2 \
+            --num-nodes=1 \
+            --machine-type=e2-medium \
+            --disk-type=pd-standard \
+            --project=portfolio-site-472419
+        else
+          echo "Cluster already exists. Skipping creation."
+        fi
+    id: Create GKE Cluster (Conditional)
+
+  # Get GKE Credentials
   - name: gcr.io/cloud-builders/gcloud
     args:
       - container
@@ -39,7 +48,9 @@ steps:
       - "--zone=northamerica-northeast2"
       - "--project=portfolio-site-472419"
     id: Get GKE Credentials
+
 images:
   - "northamerica-northeast2-docker.pkg.dev/portfolio-site-472419/portfolio-repo-smit/portfolio-smit-image:latest"
+
 options:
   logging: CLOUD_LOGGING_ONLY
